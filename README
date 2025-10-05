@@ -1,0 +1,26 @@
+README file - Visual Trigonometry Fundamentals program
+
+This free program was designed to be a tool that can be used by students, instructors, and tutors to reveal the relationships between the 
+unit circle and the three major trig functions (sine, cosine, tangent).
+
+Students learning trig sometimes find it hard initially to see how a circle with radius one relates to functions that look like
+ocean waves (sine and cosine) and the mysterious repeating function, tangent.
+
+The VTF program allows the student to enter an angle value (or a range of angles) and then view the angle in all four
+graphical forms (sine wave, cosine wave, tangent, and the unit circle) simultaneously. 
+
+The program is written in Python, using tkinter.  The version of Python used during development was 3.13.7
+All the source is in file TrigMain.py  (plus dependencies).
+
+Testing was done on a Windows machine, using a screen resolution of 1920 by 1080.  
+The program was tested using other screen resolutions as well (1280 by 800 and 1366 by 768) and should be usable on
+various handheld devices and laptops as well as desktop computers.  The program cannot be used on a cell phone.
+Further testing will be done on Linux and Mac computers when resources allow.
+
+The program is free to use in any way you want with no restrictions.
+If you make any useful changes, let me know so I can consider incorporating them into my version.
+If you discover any bugs, let me know.
+
+See accompanying file VTF_Screenshot.jpg to see an example of the program's visual display.
+
+I can be reached at danch1@verizon.net      Dan Chandler
