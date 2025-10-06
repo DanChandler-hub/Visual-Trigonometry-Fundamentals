@@ -2,8 +2,7 @@
 This is the Python code for the Visual Trigonometry Fundamentals program.  All the source is in this one file (plus dependencies).
 You can use trigmain.bat (on a Windows platform) to start the program or start it any other way that works for you.
 The program is free to use in any way you want with no restrictions. 
-If you don't like the program or any of its features, you don't have to tell me but you can if it makes you feel better.
-If you make any useful or cool changes, let me know so I can consider incorporating them into my version.
+If you make any useful changes, let me know so I can consider incorporating them into my version.
 If you discover any bugs, let me know.  I have only tested (so far) on a Windows machine.  I'll be interested in learning whether it works on Linux and Macs.
 Python 3.13.7 was used for development.
 
@@ -11,7 +10,6 @@ I can be reached at danch1@verizon.net      Dan Chandler
 """
 import tkinter as tk
 from tkinter import Canvas
-#from graphics import *
 import math
 import os  # we need os to get exit()
 
@@ -170,7 +168,6 @@ class ToolTip_For_Canvas_Items:    # I got the code for this second Tooltip clas
 
 global scale_factor_x
 global scale_factor_y
-global cycleCount
 
 def scale_x(inVal):
 	# Adjust the input value to account for non-nominal screen width
@@ -235,6 +232,179 @@ app_width  = scale_x(1260)
 app_height = scale_y(780)
 print ("app width = ", app_width, "app height = ", app_height)
 
+class setup_run:
+	def __init__(self):
+		self.bump_up_button = None
+		self.bump_down_button = None
+		self.quit_button = None
+		self.go_button = None
+		self.bump_value_entry = None
+		self.keyboard = None
+		self.TF_instance = None
+		self.version = "1.0"
+
+	def create_Widgets(self, TF_instance): # the widgets made in this function only need to be created once at the beginning of the run
+		self.TF_instance = TF_instance
+		control_line_y = app_height - scale_y(105)
+
+		self.quit_button = tk.Button(TF_instance.root, text = 'Exit', command = self.button_clicked_quit, 
+						  font = ('Helvetica', TF_instance.button_font_size), takefocus=0)
+		quit_x = app_width - scale_x(90)
+		self.quit_button.place(x=quit_x, y=control_line_y)
+		self.quit_button.bind("<<ButtonClickedQuit>>", self.handle_custom_event_quit)  # function handle_custom_event_quit proccesses event <<ButtonClickedQuit>>
+		ToolTip(self.quit_button, "This will terminate the program")
+
+		self.bump_up_button = tk.Button(TF_instance.root, text = 'Bump +', command = self.button_clicked_up, 
+								  font = ('Helvetica', TF_instance.button_font_size), takefocus=0)
+		TF_instance.app_canvas.update_idletasks() # call this to get accurate window_width value
+		up_x = quit_x - scale_x(150)
+		self.bump_up_button.place(x=up_x, y=control_line_y)
+		self.bump_up_button.config(state="disabled")
+		self.bump_up_button.bind("<<ButtonClickedUp>>", self.handle_custom_event_up)  # function handle_custom_event_up proccesses event <<ButtonClickedUp>>
+
+		TF_instance.app_canvas.create_text(app_width - scale_x(70), scale_y(15),
+								text = "Ver " + self.version, font=("Helvetica", TF_instance.small_font_size), 
+								fill=TF_instance.rgb_to_hex(TF_instance.light_gray_color))
+
+		def update_bump_tool_tips():
+			if str(TF_instance.bump_delta) == "1.0":
+				deg = " degree"
+			else:
+				deg = " degrees"
+			bump_up_tip_str = "Increase the angle value by " + str(TF_instance.bump_delta) + deg + "\nand show the new results"
+			ToolTip(self.bump_up_button, bump_up_tip_str)
+			bump_down_tip_str = "Reduce the angle value by " + str(TF_instance.bump_delta) + " degrees\nand show the new results"
+			ToolTip(self.bump_down_button, bump_down_tip_str)
+		
+		def get_bump_entry_input(event):
+			# This function is called when the Enter key is pressed in the bump entry widget.
+			# It retrieves the value from the entry and stores it in a variable.
+			entered_text = self.bump_value_entry.get()
+			try:
+				TF_instance.bump_delta = float(entered_text)
+				update_bump_tool_tips()
+				if this_screen_width > width_threshold:
+					TF_instance.app_canvas.itemconfigure(ghost_label_bump, text=entered_text)
+
+				self.bump_value_entry.config(fg="black")   # change the color of the bump entry text back to black (as Amy Winehouse would say)
+			except ValueError:
+				TF_instance.showErrorWindow(entered_text)
+
+
+		bump_entry_text = tk.StringVar()
+		initial_bump_value = str(TF_instance.bump_delta)
+		bump_entry_text.set(initial_bump_value)
+
+		def on_focus_in(event):
+			self.bump_value_entry.config(fg="red") # set color of text to red when user sets focus on bump entry input field
+
+		self.bump_value_entry = tk.Entry(TF_instance.root, width=10, textvariable=bump_entry_text, bg='white',  fg='black', 
+						font=("Helvetica", TF_instance.entry_font_size), takefocus = 0)
+		self.bump_value_entry.bind("<Return>", get_bump_entry_input)
+		self.bump_value_entry.bind("<FocusIn>", on_focus_in)
+		bump_value_x = up_x - scale_x(195)
+		self.bump_value_entry.place(x=bump_value_x, y=control_line_y, height = 30)
+		ToolTip(self.bump_value_entry, "This value is the amount in degrees that a Bump+ or Bump- will add or subtract to the angle value.\nYou can change this value by typing a new value and pressing the Enter key.")
+
+		if this_screen_width > width_threshold:
+			ghost_label_bump =TF_instance.app_canvas.create_text(bump_value_x + scale_x(15),control_line_y + scale_y(40),
+								text=initial_bump_value, font=("Helvetica", TF_instance.small_font_size), 
+								fill=TF_instance.rgb_to_hex(TF_instance.light_gray_color))
+			# Attach tooltip to the ghost value
+			ToolTip_For_Canvas_Items(TF_instance.app_canvas, ghost_label_bump, "Shows which bump delta is currently in effect")
+
+		self.bump_down_button = tk.Button(TF_instance.root, text = 'Bump -', command = self.button_clicked_down, 
+									font = ('Helvetica', TF_instance.button_font_size), takefocus=0)
+		down_x = bump_value_x - scale_x(150)
+		self.bump_down_button.place(x=down_x, y=control_line_y)
+		self.bump_down_button.config(state="disabled")
+		self.bump_down_button.bind("<<ButtonClickedDown>>",self.handle_custom_event_down)  # function handle_custom_event_down proccessrd event <<ButtonClickeddown>>
+		update_bump_tool_tips()
+
+		TF_instance.input_box_L_x = scale_x(190)
+		TF_instance.input_box_R_x = TF_instance.input_box_L_x + scale_x(100)
+		entry_tooltip_text = "Enter one angle value in degrees to process a single angle.\nEnter two angle values to process a range of angles."
+
+		TF_instance.input_box_left = tk.Entry(TF_instance.root, width=scale_x(12), bg='white',  fg='black', font=("Helvetica", 
+											TF_instance.entry_font_size), takefocus=1)
+		TF_instance.input_box_left.place(x=TF_instance.input_box_L_x - scale_x(94), y=scale_y(TF_instance.input_box_location_y) + scale_y(14), 
+								   height = scale_y(25))
+		TF_instance.input_box_left.focus_set()
+		ToolTip(TF_instance.input_box_left, entry_tooltip_text)
+
+		TF_instance.input_box_right = tk.Entry(TF_instance.root, width=scale_x(12), bg='white',  fg='black', 
+										 font=("Helvetica", TF_instance.entry_font_size), takefocus=1)
+		TF_instance.input_box_right.place(x=TF_instance.input_box_R_x - scale_x(50), 
+									y=scale_y(TF_instance.input_box_location_y) + scale_y(14), height = scale_y(25))
+		ToolTip(TF_instance.input_box_right, entry_tooltip_text)
+
+		inText_right_id = TF_instance.app_canvas.create_text(scale_x(-2000), scale_y(200), text="", font=("Helvetica", 8), 
+												fill=TF_instance.rgb_to_hex(TF_instance.light_gray_color))
+		TF_instance.inText_right = TF_instance.app_canvas.itemcget(inText_right_id, "text") # itemcget retrieves the text that was written to the canvas
+
+		self.go_button = tk.Button(TF_instance.root, text = 'Go', command = self.button_clicked_go, font = ('Helvetica', 
+																								 TF_instance.button_font_size), takefocus=1)
+		go_x = TF_instance.input_box_R_x + TF_instance.input_box_right.winfo_width() + scale_x(90)
+		self.go_button.place(x=go_x, y=scale_y(TF_instance.input_box_location_y) + scale_y(12), height = scale_y(29))
+		self.go_button.bind("<<ButtonClickedGo>>", TF_instance.handle_custom_event_go)  # function handle_custom_event_go proccesses event <<ButtonClickedGo>>
+		ToolTip(self.go_button, "Click here after inputting angle value(s) to plot")
+
+		self.keyboard = VirtualKeyboard(scale_x(215), control_line_y + scale_y(65), 100, TF_instance.app_canvas)
+		self.keyboard._draw()
+
+		inText_left_id = TF_instance.app_canvas.create_text(scale_x(-2000), scale_y(200), text="", font=("Helvetica", 8), 
+											   fill=TF_instance.rgb_to_hex(TF_instance.light_gray_color))
+		TF_instance.inText_left = TF_instance.app_canvas.itemcget(inText_left_id, "text") # itemcget retrieves the text that was written to the canvas
+
+		local_font_size = None
+		if this_screen_width > width_threshold:
+			local_font_size = TF_instance.primary_font_size
+		else:
+			local_font_size = TF_instance.small_font_size
+		TF_instance.app_canvas.create_text(scale_x(TF_instance.text_x), scale_y(TF_instance.label_location1_y),
+								text="Enter angle in degrees,", font=("Helvetica", local_font_size))
+		TF_instance.app_canvas.create_text(scale_x(TF_instance.text_x), scale_y(TF_instance.label_location2_y),
+								text="then touch (or click on) the Go button.", font=("Helvetica", local_font_size))
+		TF_instance.app_canvas.create_text(scale_x(TF_instance.text_x), scale_y(TF_instance.label_location3_y),
+								text="Or you can enter two angles,", font=("Helvetica", local_font_size))
+		TF_instance.app_canvas.create_text(scale_x(TF_instance.text_x), scale_y(TF_instance.label_location4_y),
+								text="then touch the Go button.", font=("Helvetica", local_font_size))
+		
+	def button_clicked_up(self):
+		# print ("bump up button was clicked")
+		self.bump_up_button.event_generate("<<ButtonClickedUp>>")
+
+	def button_clicked_down(self):
+		# print ("bump down button was clicked")		
+		self.bump_down_button.event_generate("<<ButtonClickedDown>>")
+
+	def button_clicked_quit(self):
+		# print ("quit button was clicked")
+		self.quit_button.event_generate("<<ButtonClickedQuit>>")
+
+	def button_clicked_go(self):
+		self.go_button.event_generate("<<ButtonClickedGo>>")
+		#print("Go button clicked, generating event <<ButtonClickedGo>>.")	
+
+	def handle_custom_event_up(self, event):
+		#print("Custom event: bump plus button was clicked")
+		self.bump_up_button.config(state="disabled")    # disable the two bump buttons
+		self.bump_down_button.config(state="disabled")
+		self.TF_instance.process_bump('up')
+		self.TF_instance.show_bump_buttons()     # restore the bump buttons
+
+	def handle_custom_event_down(self, event):
+		# print("Custom event: bump minus button was clicked")
+		self.bump_up_button.config(state="disabled")    # disable the two bump buttons
+		self.bump_down_button.config(state="disabled")
+		self.TF_instance.process_bump('down')
+		self.TF_instance.show_bump_buttons()     # restore the bump buttons
+
+	def handle_custom_event_quit(self, event):
+		# print("Custom event: quit button was clicked")
+		os._exit(0)
+		#exit()	
+
 class TrigFundamentals:
 	def __init__(self):
 		self.root = tk.Tk()
@@ -243,16 +413,9 @@ class TrigFundamentals:
 		self.root.resizable(False, False)
 		self.input_box_left = None
 		self.input_box_right = None
-		self.keyboard = None
 		self.inText_left = None
 		self.inText_right = None
-		self.quit_button = None
-		self.go_button = None
-		self.bump_up_button = None
-		self.bump_down_button = None
-		#self.go_button_status_var = None
 		self.ghost_label_bump = None
-		self.bump_value_entry = None
 		self.bump_delta = 15.0
 		self.ghost_label_left_id = None
 		self.ghost_label_right_id = None
@@ -268,10 +431,19 @@ class TrigFundamentals:
 		self.last_angle_deg_left = 0.0
 		self.last_angle_deg_right = 0.0
 		self.last_angle_deg = 0.0
+		self.sin_line_id = None
+		self.text_sin_id = None
+		self.cos_line_id = None
+		self.text_cos_id = None
+		self.tan_line_id = None
+		self.text_tan_id = None
+		self.text_angle_deg_id = None
+		self.text_angle_rad_id = None
 		self.lineH_id = None
 		self.lineS_id = None
 		self.lineC_id = None
-		self.version = "1.0"
+		self.firstCycle = True
+		self.setup_instance = None
 
 		root_window = self.root.winfo_toplevel()
 		root_window.overrideredirect(1)  # get rid of the title bar of the main window
@@ -286,7 +458,8 @@ class TrigFundamentals:
 		self.app_canvas = Canvas(self.root, width=app_width, height=app_height, bg=aquaBlue)
 		self.app_canvas.pack()
      
-		self.create_Widgets()
+		self.setup_instance = setup_run()
+		self.setup_instance.create_Widgets(self)
 
 	graphMinInDegrees = -360.0
 	graphMaxInDegrees = 720.0
@@ -316,7 +489,7 @@ class TrigFundamentals:
 	scale_factor_y = 0.0
 
 	def x_annotation(self, angle_left, x_right, angle_right, y_position_annotation):
-		# this method puts the annotation on the x axis
+		# this method puts the annotation on the x axis that is below the tangent box
 
 		thisAngle_deg = angle_left
 		angle_span = angle_right - angle_left
@@ -348,18 +521,17 @@ class TrigFundamentals:
 		point_color = self.rgb_to_hex((0, 0, 255))  # dark blue
 		self.app_canvas.create_rectangle(x_position,y_position,x_position+1,y_position+1, outline=point_color, fill=point_color)  # this line draws a single point
 
-	def DrawTanPoint(self, Angle_deg, Angle_rad, thisTan):
+	def DrawTanPoint(self, Angle_deg):
+		thisAngle_rad = Angle_deg * math.pi / 180.0
+		thisTan = math.tan(thisAngle_rad)
 		x_position = scale_x(self.UpperLeft_x_tan)+(scale_x(self.box_width) / self.graphSpan)*(Angle_deg-self.graphMinInDegrees)
 		y_position = scale_y(self.UpperLeft_y_tan) +(scale_y(self.tan_box_height) / 2.0) - (thisTan * (scale_y(self.tan_box_height)/scale_y(15)))
 		if y_position >= scale_y(self.UpperLeft_y_tan) and y_position <= (scale_y(self.UpperLeft_y_tan) + scale_y(self.tan_box_height)):
 			self.app_canvas.create_rectangle(x_position,y_position,x_position+1,y_position+1)  # this line draws a single point
 
-	def SinBox(self, angle_deg, last_angle_deg, sinOfAngle, cycleCount):
+	def SinBox(self, angle_deg, last_angle_deg, sinOfAngle):
 		sinBoxColor = self.rgb_to_hex((255, 255, 255)) # white
-		global sin_line_id
-		global text_sin_id
-
-		if( cycleCount == 1 ): # cycleCount 1 is the first angle that the user has asked for
+		if( self.firstCycle ): 
 			
 			self.app_canvas.create_rectangle(
     			scale_x(self.UpperLeft_x_sin), scale_y(self.UpperLeft_y_sin), # x1, y1
@@ -394,15 +566,15 @@ class TrigFundamentals:
 				self.DrawSinPoint(thisAngle_deg)
 				thisAngle_deg += 1.0
 
-		else: # cycleCount is > 1
+		else: 
 			if last_angle_deg >= self.graphMinInDegrees and last_angle_deg <= self.graphMaxInDegrees:
-				self.app_canvas.delete(sin_line_id)  # remove the last red sin line that we drew
-			self.app_canvas.delete(text_sin_id)  # remove the text from the previous cycle
+				self.app_canvas.delete(self.sin_line_id)  # remove the last red sin line that we drew
+			self.app_canvas.delete(self.text_sin_id)  # remove the text from the previous cycle
 
 		if angle_deg >= self.graphMinInDegrees and angle_deg <= self.graphMaxInDegrees:
 			# draw a vertical red line to show the sin of the angle that the user selected
 			requestedColor = self.rgb_to_hex((255, 0, 0)) # red
-			sin_line_id = self.verticalLine(angle_deg, scale_x(self.UpperLeft_x_sin), scale_y(self.UpperLeft_y_sin), scale_x(self.box_width), 
+			self.sin_line_id = self.verticalLine(angle_deg, scale_x(self.UpperLeft_x_sin), scale_y(self.UpperLeft_y_sin), scale_x(self.box_width), 
 								      scale_y(self.sin_cos_box_height), requestedColor)
 			
 		# Force some special cases to be rounded values
@@ -415,15 +587,13 @@ class TrigFundamentals:
 		else:
 			sin_str = "sine = " + str(sinOfAngle)
 
-		text_sin_id = self.app_canvas.create_text(scale_x(self.UpperLeft_x_sin)+(scale_x(self.box_width)/2.0), 
+		self.text_sin_id = self.app_canvas.create_text(scale_x(self.UpperLeft_x_sin)+(scale_x(self.box_width)/2.0), 
 						scale_y(self.UpperLeft_y_sin)-scale_y(20), 	text=sin_str, font=("Helvetica", self.primary_font_size, "bold"), 
 						fill=self.rgb_to_hex((255, 0, 0))) #  red
 
-	def CosBox(self, angle_deg, last_angle_deg, cosOfAngle, cycleCount):
+	def CosBox(self, angle_deg, last_angle_deg, cosOfAngle):
 		cosBoxColor = self.rgb_to_hex((255, 255, 255)) # white
-		global cos_line_id
-		global text_cos_id
-		if( cycleCount == 1 ): # cycleCount 1 is the first angle that the user has asked for
+		if( self.firstCycle ):
 
 			self.app_canvas.create_rectangle(
     			scale_x(self.UpperLeft_x_cos), scale_y(self.UpperLeft_y_cos), # x1, y1
@@ -458,15 +628,15 @@ class TrigFundamentals:
 				self.DrawCosPoint(thisAngle_deg)
 				thisAngle_deg += 1.0
 
-		else: # cycleCount is > 1
+		else:
 			if last_angle_deg >= self.graphMinInDegrees and last_angle_deg <= self.graphMaxInDegrees:
-				self.app_canvas.delete(cos_line_id)  # remove the last blue cos line that we drew
-			self.app_canvas.delete(text_cos_id)  # remove the text from the previous cycle
+				self.app_canvas.delete(self.cos_line_id)  # remove the last blue cos line that we drew
+			self.app_canvas.delete(self.text_cos_id)  # remove the text from the previous cycle
 
 		if angle_deg >= self.graphMinInDegrees and angle_deg <= self.graphMaxInDegrees:
 			# draw a vertical dark blue line to show the cos of the angle that the user selected
 			requestedColor = self.rgb_to_hex((0, 0, 255)) # red
-			cos_line_id = self.verticalLine(angle_deg, scale_x(self.UpperLeft_x_cos), scale_y(self.UpperLeft_y_cos), scale_x(self.box_width), scale_y(self.sin_cos_box_height), requestedColor)
+			self.cos_line_id = self.verticalLine(angle_deg, scale_x(self.UpperLeft_x_cos), scale_y(self.UpperLeft_y_cos), scale_x(self.box_width), scale_y(self.sin_cos_box_height), requestedColor)
 
 		# Force some special cases to be rounded values
 		if(angle_deg == 60.0 or angle_deg == -60.0):
@@ -476,15 +646,13 @@ class TrigFundamentals:
 		else:
 			cos_str = "cosine = " + str(cosOfAngle)
 
-		text_cos_id = self.app_canvas.create_text(scale_x(self.UpperLeft_x_cos)+(scale_x(self.box_width)/2.0), 
+		self.text_cos_id = self.app_canvas.create_text(scale_x(self.UpperLeft_x_cos)+(scale_x(self.box_width)/2.0), 
 						scale_y(self.UpperLeft_y_cos)-scale_y(20), 	text=cos_str, font=("Helvetica", self.primary_font_size, "bold"), 
 						fill=self.rgb_to_hex((0, 0, 255))) #  red
 
-	def TanBox(self, angle_deg, last_angle_deg, tanOfAngle, cycleCount):
+	def TanBox(self, angle_deg, last_angle_deg, tanOfAngle):
 		tanBoxColor = self.rgb_to_hex((255, 255, 255)) # white
-		global tan_line_id
-		global text_tan_id
-		if( cycleCount == 1 ): # cycleCount 1 is the first angle that the user has asked for
+		if( self.firstCycle ):
 		
 			self.app_canvas.create_rectangle(
     			scale_x(self.UpperLeft_x_tan), scale_y(self.UpperLeft_y_tan), # x1, y1
@@ -514,20 +682,18 @@ class TrigFundamentals:
 			# draw the entire tan function from graphMinInDegrees to graphMaxInDegrees
 			thisAngle_deg = self.graphMinInDegrees
 			while thisAngle_deg <= self.graphMaxInDegrees:
-				thisAngle_rad = thisAngle_deg * math.pi / 180.0
-				thisTan = math.tan(thisAngle_rad)
-				self.DrawTanPoint(thisAngle_deg, thisAngle_rad, thisTan)
+				self.DrawTanPoint(thisAngle_deg)
 				thisAngle_deg += 0.1
 
-		else: # cycleCount is > 1
+		else: 
 			if last_angle_deg >= self.graphMinInDegrees and last_angle_deg <= self.graphMaxInDegrees:
-				self.app_canvas.delete(tan_line_id)  # remove the last black vertical line that we drew
-			self.app_canvas.delete(text_tan_id)  # remove the text from the previous cycle
+				self.app_canvas.delete(self.tan_line_id)  # remove the last black vertical line that we drew
+			self.app_canvas.delete(self.text_tan_id)  # remove the text from the previous cycle
 			
 		if angle_deg >= self.graphMinInDegrees and angle_deg <= self.graphMaxInDegrees:
 			# draw a vertical black line to show the tan of the angle that the user selected
 			requestedColor = self.rgb_to_hex((0, 0, 0)) # black
-			tan_line_id = self.verticalLine(angle_deg, scale_x(self.UpperLeft_x_tan), scale_y(self.UpperLeft_y_tan), 
+			self.tan_line_id = self.verticalLine(angle_deg, scale_x(self.UpperLeft_x_tan), scale_y(self.UpperLeft_y_tan), 
 								   scale_x(self.box_width), scale_y(self.tan_box_height), requestedColor)
 
 		# Force some special cases to be rounded values
@@ -542,7 +708,7 @@ class TrigFundamentals:
 		else:
 			tan_str = "tangent = " + str(tanOfAngle)
 
-		text_tan_id = self.app_canvas.create_text(scale_x(self.UpperLeft_x_tan)+(scale_x(self.box_width)/2.0), 
+		self.text_tan_id = self.app_canvas.create_text(scale_x(self.UpperLeft_x_tan)+(scale_x(self.box_width)/2.0), 
 				scale_y(self.UpperLeft_y_tan)-scale_y(20), 	text=tan_str, font=("Helvetica", self.primary_font_size, "bold"))
 				
 	def verticalLine(self, angle_deg_requested, UpperLeft_x, UpperLeft_y, width, height, requestedColor):
@@ -559,13 +725,13 @@ class TrigFundamentals:
 	def create_circle(self, center_x, center_y, radius, canvas, **kwargs):
 		return canvas.create_oval(center_x-radius, center_y-radius, center_x+radius, center_y+radius, **kwargs)
 		
-	def UnitCircle(self, sinOfAngle, cosOfAngle, cycleCount):
+	def UnitCircle(self, sinOfAngle, cosOfAngle):
 
 		radius = scale_x(175)
 		center_x = scale_x(240)
 		center_y = scale_y(520)
 
-		if(cycleCount == 1): # cycleCount 1 is the first angle that the user has asked for
+		if(self.firstCycle):
 
 			self.app_canvas.create_text(center_x, center_y - radius - scale_y(50), text="Unit Circle       Radius = 1",
 										font=("Helvetica", self.primary_font_size, "bold"))
@@ -630,16 +796,14 @@ class TrigFundamentals:
 		y2 = center_y
 		self.lineC_id = self.app_canvas.create_line(x1, y1, x2, y2, fill =self.rgb_to_hex((0, 0, 255)), width = line_width)  # dark blue
 
-	def WriteAngleValues(self, text_y, angle_deg, angle_rad, cycleCount):
+	def WriteAngleValues(self, text_y, angle_deg, angle_rad):
 
 		angle_deg_str = 'angle in degrees = ' + str(angle_deg)
 		angle_rad_str = 'angle in radians = ' + str(angle_rad)
-		global text_angle_deg_id
-		global text_angle_rad_id
 
-		if(cycleCount > 1):  # cycleCount 1 is the first angle that the user has asked for
-			self.app_canvas.delete(text_angle_deg_id)  # Erase the text from the previous cycle
-			self.app_canvas.delete(text_angle_rad_id)  # Erase the text from the previous cycle
+		if(not self.firstCycle): 
+			self.app_canvas.delete(self.text_angle_deg_id)  # Erase the text from the previous cycle
+			self.app_canvas.delete(self.text_angle_rad_id)  # Erase the text from the previous cycle
 
 		local_font_size = None
 		if this_screen_width > width_threshold:
@@ -647,10 +811,10 @@ class TrigFundamentals:
 		else:
 			local_font_size = self.small_font_size #   # for tiny keyboards, we have to hardcode a small amount
 
-		text_angle_deg_id = self.app_canvas.create_text(scale_x(self.text_x), scale_y(text_y)+scale_y(43), text=angle_deg_str, 
+		self.text_angle_deg_id = self.app_canvas.create_text(scale_x(self.text_x), scale_y(text_y)+scale_y(43), text=angle_deg_str, 
 												  font=("Helvetica", self.primary_font_size, "bold"))
 
-		text_angle_rad_id = self.app_canvas.create_text(scale_x(self.text_x), scale_y(text_y)+scale_y(48)+scale_y(self.line_height), text=angle_rad_str, 
+		self.text_angle_rad_id = self.app_canvas.create_text(scale_x(self.text_x), scale_y(text_y)+scale_y(48)+scale_y(self.line_height), text=angle_rad_str, 
 												  font=("Helvetica", local_font_size))
 
 	def showErrorWindow(self, text):
@@ -693,23 +857,21 @@ class TrigFundamentals:
 		close_button = tk.Button(self.rootErrorWindow, text = 'Close', command = close_window, font = ('Helvetica', self.button_font_size))
 		close_button.place(x=int(err_window_width / 2) - scale_x(25), y=int(err_window_height * 5 / 8))
 
-	def process_range(self, run_type_str, angle_deg_left_float, angle_deg_right_float, cycleCount):
+	def process_range(self, run_type_str, angle_deg_left_float, angle_deg_right_float):
 		angle = angle_deg_left_float
-		self.process_one_angle(run_type_str, angle, cycleCount)
+		self.process_one_angle(run_type_str, angle)
 		if angle_deg_left_float < angle_deg_right_float:
 			while angle+self.bump_delta <= angle_deg_right_float:
 				angle += self.bump_delta
-				cycleCount += 1
-				self.process_one_angle(run_type_str, angle, cycleCount)
+				self.process_one_angle(run_type_str, angle)
 				self.app_canvas.update()
 		else:
 			while angle-self.bump_delta >= angle_deg_right_float:
 				angle -= self.bump_delta
-				cycleCount += 1
-				self.process_one_angle(run_type_str, angle, cycleCount)
+				self.process_one_angle(run_type_str, angle)
 				self.app_canvas.update()
 
-	def process_one_angle(self, run_type_str, angle_deg, cycleCount):
+	def process_one_angle(self, run_type_str, angle_deg):
 
 		x_right = self.x_left + self.box_width
 		y_position_annotation = self.UpperLeft_y_tan + self.tan_box_height + 30
@@ -728,9 +890,9 @@ class TrigFundamentals:
 		angle_rad = angle_deg * math.pi / 180.0
 				
 		if run_type_str == 'single_left' or run_type_str == 'single_right':
-			self.draw_one_angle (angle_deg, angle_rad, self.last_angle_deg, cycleCount)
+			self.draw_one_angle (angle_deg, angle_rad, self.last_angle_deg)
 		elif run_type_str == 'range':
-			self.draw_one_angle (angle_deg, angle_rad, self.last_angle_deg, cycleCount)
+			self.draw_one_angle (angle_deg, angle_rad, self.last_angle_deg)
 
 		if run_type_str == 'single_left':
 			self.last_angle_deg_left = angle_deg
@@ -741,33 +903,32 @@ class TrigFundamentals:
 
 		self.last_angle_deg = angle_deg
 
-		if cycleCount == 1:  # cycleCount 1 is the first angle that the user has asked for
+		if self.firstCycle: 
 			self.x_annotation(self.graphMinInDegrees, x_right, self.graphMaxInDegrees, y_position_annotation)
+		self.firstCycle = False	
 								
-	def draw_one_angle(self, angle_deg, angle_rad, last_angle_deg, cycleCount):
+	def draw_one_angle(self, angle_deg, angle_rad, last_angle_deg):
 
 		sinOfAngle = math.sin(angle_rad)
 		cosOfAngle = math.cos(angle_rad)
 		tanOfAngle = math.tan(angle_rad)
 
-		self.WriteAngleValues(scale_y(self.angle_values_location_y), angle_deg, angle_rad, cycleCount)
+		self.WriteAngleValues(scale_y(self.angle_values_location_y), angle_deg, angle_rad)
 
-		self.SinBox(angle_deg, last_angle_deg, sinOfAngle, cycleCount)
+		self.SinBox(angle_deg, last_angle_deg, sinOfAngle)
 
-		self.CosBox(angle_deg, last_angle_deg, cosOfAngle, cycleCount)
+		self.CosBox(angle_deg, last_angle_deg, cosOfAngle)
 
-		self.TanBox(angle_deg, last_angle_deg, tanOfAngle, cycleCount)
+		self.TanBox(angle_deg, last_angle_deg, tanOfAngle)
 
-		self.UnitCircle(sinOfAngle, cosOfAngle, cycleCount)
+		self.UnitCircle(sinOfAngle, cosOfAngle)
 
 	def process_bump(self, direction):  #direction = up or down
-		#global bump_delta
-		
 		if direction == 'up':
 			new_angle = self.last_angle_deg + self.bump_delta
 		elif direction == 'down':
 			new_angle = self.last_angle_deg - self.bump_delta
-		self.process_one_angle('single_left', new_angle, 7)
+		self.process_one_angle('single_left', new_angle)
 		
 	def get_inputs(self):
 
@@ -857,184 +1018,16 @@ class TrigFundamentals:
 			
 		return ret_value_int
 
-	def button_clicked_up(self):
-		# print ("bump plus button was clicked (from graphics.py  class Button)")
-		self.bump_up_button.event_generate("<<ButtonClickedUp>>")
-
-	def button_clicked_down(self):
-		# us button was clicked (from graphics.py  class Button)")
-		self.bump_down_button.event_generate("<<ButtonClickedDown>>")
-
-	def button_clicked_quit(self):
-		# print ("quit button was clicked (from graphics.py  class Button)")
-		self.quit_button.event_generate("<<ButtonClickedQuit>>")
-
-	def button_clicked_go(self):
-		self.go_button.event_generate("<<ButtonClickedGo>>")
-		#print("Go button clicked, generating event <<ButtonClickedGo>>.")
-
-	def handle_custom_event_up(self, event):
-		#print("Custom event: bump plus button was clicked")
-		self.bump_up_button.config(state="disabled")    # disable the two bump buttons
-		self.bump_down_button.config(state="disabled")
-		self.process_bump('up')
-		self.show_bump_buttons()     # restore the bump buttons
-
-	def handle_custom_event_down(self, event):
-		# print("Custom event: bump minus button was clicked")
-		self.bump_up_button.config(state="disabled")    # disable the two bump buttons
-		self.bump_down_button.config(state="disabled")
-		self.process_bump('down')
-		self.show_bump_buttons()     # restore the bump buttons
-
-	def handle_custom_event_quit(self, event):
-		# print("Custom event: quit button was clicked")
-		os._exit(0)
-
 	def show_bump_buttons(self):
-		self.bump_up_button.config(state="normal")     # restore the two bump buttons
-		self.bump_down_button.config(state="normal")
+		self.setup_instance.bump_up_button.config(state="normal")     # restore the two bump buttons
+		self.setup_instance.bump_down_button.config(state="normal")
 
 	def rgb_to_hex(self, rgb):
 		# Convert (R, G, B) tuple to hex string.
 		return "#%02x%02x%02x" % rgb
 			
-	def create_Widgets(self): # the widgets made in this function only need to be created once at the beginning of the run
-		control_line_y = app_height - scale_y(105)
-
-		quit_button = tk.Button(self.root, text = 'Exit', command = self.button_clicked_quit, font = ('Helvetica', self.button_font_size), takefocus=0)
-		quit_x = app_width - scale_x(90)
-		quit_button.place(x=quit_x, y=control_line_y)
-		quit_button.bind("<<ButtonClickedQuit>>", self.handle_custom_event_quit)  # function handle_custom_event_quit proccesses event <<ButtonClickedQuit>>
-		self.quit_button = quit_button
-		ToolTip(quit_button, "This will terminate the program")
-
-		self.bump_up_button = tk.Button(self.root, text = 'Bump +', command = self.button_clicked_up, font = ('Helvetica', self.button_font_size), takefocus=0)
-		self.app_canvas.update_idletasks() # call this to get accurate window_width value
-		up_x = quit_x - scale_x(150)
-		self.bump_up_button.place(x=up_x, y=control_line_y)
-		self.bump_up_button.config(state="disabled")
-		self.bump_up_button.bind("<<ButtonClickedUp>>", self.handle_custom_event_up)  # function handle_custom_event_up proccesses event <<ButtonClickedUp>>
-
-		self.app_canvas.create_text(app_width - scale_x(70), scale_y(15),
-								text = "Ver " + self.version, font=("Helvetica", self.small_font_size), fill=self.rgb_to_hex(self.light_gray_color))
-
-		def update_bump_tool_tips():
-			if str(self.bump_delta) == "1.0":
-				deg = " degree"
-			else:
-				deg = " degrees"
-			bump_up_tip_str = "Increase the angle value by " + str(self.bump_delta) + deg + "\nand show the new results"
-			ToolTip(self.bump_up_button, bump_up_tip_str)
-			bump_down_tip_str = "Reduce the angle value by " + str(self.bump_delta) + " degrees\nand show the new results"
-			ToolTip(self.bump_down_button, bump_down_tip_str)
-		
-		def get_bump_entry_input(event):
-			# This function is called when the Enter key is pressed in the bump entry widget.
-			# It retrieves the value from the entry and stores it in a variable.
-			entered_text = self.bump_value_entry.get()
-			#global bump_delta
-			try:
-				self.bump_delta = float(entered_text)
-				update_bump_tool_tips()
-				if this_screen_width > width_threshold:
-					self.app_canvas.itemconfigure(ghost_label_bump, text=entered_text)
-
-				self.bump_value_entry.config(fg="black")   # change the color of the bump entry text back to black (as Amy Winehouse would say)
-			except ValueError:
-				self.showErrorWindow(entered_text)
-
-
-		bump_entry_text = tk.StringVar()
-		initial_bump_value = str(self.bump_delta)
-		bump_entry_text.set(initial_bump_value)
-
-		def on_focus_in(event):
-			self.bump_value_entry.config(fg="red") # set color of text to red when user sets focus on bump entry input field
-
-		self.bump_value_entry = tk.Entry(self.root, width=10, textvariable=bump_entry_text, bg='white',  fg='black', 
-						font=("Helvetica", self.entry_font_size), takefocus = 0)
-		self.bump_value_entry.bind("<Return>", get_bump_entry_input)
-		self.bump_value_entry.bind("<FocusIn>", on_focus_in)
-		bump_value_x = up_x - scale_x(195)
-		self.bump_value_entry.place(x=bump_value_x, y=control_line_y, height = 30)
-		ToolTip(self.bump_value_entry, "This value is the amount in degrees that a Bump+ or Bump- will add or subtract to the angle value.\nYou can change this value by typing a new value and pressing the Enter key.")
-
-		if this_screen_width > width_threshold:
-			ghost_label_bump =self.app_canvas.create_text(bump_value_x + scale_x(15),control_line_y + scale_y(40),
-								text=initial_bump_value, font=("Helvetica", self.small_font_size), fill=self.rgb_to_hex(self.light_gray_color))
-			# Attach tooltip to the ghost value
-			ToolTip_For_Canvas_Items(self.app_canvas, ghost_label_bump, "Shows which bump delta is currently in effect")
-
-		self.bump_down_button = tk.Button(self.root, text = 'Bump -', command = self.button_clicked_down, font = ('Helvetica', self.button_font_size), takefocus=0)
-		down_x = bump_value_x - scale_x(150)
-		self.bump_down_button.place(x=down_x, y=control_line_y)
-		self.bump_down_button.config(state="disabled")
-		self.bump_down_button.bind("<<ButtonClickedDown>>",self.handle_custom_event_down)  # function handle_custom_event_down proccessrd event <<ButtonClickeddown>>
-		update_bump_tool_tips()
-
-		self.input_box_L_x = scale_x(190)
-		self.input_box_R_x = self.input_box_L_x + scale_x(100)
-		entry_tooltip_text = "Enter one angle value in degrees to process a single angle.\nEnter two angle values to process a range of angles."
-
-		self.input_box_left = tk.Entry(self.root, width=scale_x(12), bg='white',  fg='black', font=("Helvetica", self.entry_font_size), takefocus=1)
-		self.input_box_left.place(x=self.input_box_L_x - scale_x(94), y=scale_y(self.input_box_location_y) + scale_y(14), height = scale_y(25))
-		self.input_box_left.focus_set()
-		ToolTip(self.input_box_left, entry_tooltip_text)
-
-		self.input_box_right = tk.Entry(self.root, width=scale_x(12), bg='white',  fg='black', font=("Helvetica", self.entry_font_size), takefocus=1)
-		self.input_box_right.place(x=self.input_box_R_x - scale_x(50), y=scale_y(self.input_box_location_y) + scale_y(14), height = scale_y(25))
-		ToolTip(self.input_box_right, entry_tooltip_text)
-
-		inText_right_id = self.app_canvas.create_text(scale_x(-2000), scale_y(200), text="", font=("Helvetica", 8), 
-												fill=self.rgb_to_hex(self.light_gray_color))
-		self.inText_right = self.app_canvas.itemcget(inText_right_id, "text") # itemcget retrieves the text that was written to the canvas
-
-		go_button = tk.Button(self.root, text = 'Go', command = self.button_clicked_go, font = ('Helvetica', self.button_font_size), takefocus=1)
-		self.go_button = go_button
-		go_x = self.input_box_R_x + self.input_box_right.winfo_width() + scale_x(90)
-		go_button.place(x=go_x, y=scale_y(self.input_box_location_y) + scale_y(12), height = scale_y(29))
-		go_button.bind("<<ButtonClickedGo>>", self.handle_custom_event_go)  # function handle_custom_event_go proccesses event <<ButtonClickedGo>>
-		ToolTip(go_button, "Click here after inputting angle value(s) to plot")
-
-		self.keyboard = VirtualKeyboard(scale_x(215), control_line_y + scale_y(65), 100, self.app_canvas)
-		self.keyboard._draw()
-
-		inText_left_id = self.app_canvas.create_text(scale_x(-2000), scale_y(200), text="", font=("Helvetica", 8), 
-											   fill=self.rgb_to_hex(self.light_gray_color))
-		self.inText_left = self.app_canvas.itemcget(inText_left_id, "text") # itemcget retrieves the text that was written to the canvas
-
-		local_font_size = None
-		if this_screen_width > width_threshold:
-			local_font_size = self.primary_font_size
-		else:
-			local_font_size = self.small_font_size
-		self.app_canvas.create_text(scale_x(self.text_x), scale_y(self.label_location1_y),
-								text="Enter angle in degrees,", font=("Helvetica", local_font_size))
-		self.app_canvas.create_text(scale_x(self.text_x), scale_y(self.label_location2_y),
-								text="then touch (or click on) the Go button.", font=("Helvetica", local_font_size))
-		self.app_canvas.create_text(scale_x(self.text_x), scale_y(self.label_location3_y),
-								text="Or you can enter two angles,", font=("Helvetica", local_font_size))
-		self.app_canvas.create_text(scale_x(self.text_x), scale_y(self.label_location4_y),
-								text="then touch the Go button.", font=("Helvetica", local_font_size))
-		
-		#if this_screen_width > width_threshold:
-			# The ghost labels let the user see what they typed after they type a selection
-			#self.ghost_label_left_id = self.app_canvas.create_text(self.input_box_L_x - scale_x(60), scale_y(self.input_box_location_y) + scale_y(49),
-			#						text = "", font=("Helvetica", self.small_font_size), fill=self.rgb_to_hex(self.light_gray_color))
-			#self.ghost_label_right_id = self.app_canvas.create_text(self.input_box_R_x - scale_x(20), scale_y(self.input_box_location_y) + scale_y(49),
-			#						text = "", font=("Helvetica", self.small_font_size), fill=self.rgb_to_hex(self.light_gray_color))
-			# Attach tooltip to the two ghost values
-			#ToolTip_For_Canvas_Items(self.app_canvas, self.ghost_label_left_id, "This is the last angle value you typed above")
-			#ToolTip_For_Canvas_Items(self.app_canvas, self.ghost_label_right_id, "This is the last angle value you typed above")
-
 	def handle_custom_event_go(self, event):  # this function defines what will be done when the user presses the Go button
 		
-			global cycleCount
-			cycleCount += 1
-		
-			#self.keyboard.show_kb_frame()
-
 			run_type_str, angle_deg_left_float, angle_deg_right_float = self.get_inputs()
 
 			if this_screen_width > width_threshold:
@@ -1050,27 +1043,23 @@ class TrigFundamentals:
 				ToolTip_For_Canvas_Items(self.app_canvas, self.ghost_label_left_id, "This is the last angle value you typed above")
 				ToolTip_For_Canvas_Items(self.app_canvas, self.ghost_label_right_id, "This is the last angle value you typed above")
 		
-			#self.keyboard.hide_kb_frame()
 			self.input_box_left.focus_set() 
 
 			if run_type_str == 'single_left':
-				self.process_one_angle(run_type_str, angle_deg_left_float, cycleCount)
+				self.process_one_angle(run_type_str, angle_deg_left_float)
 				self.show_bump_buttons()     # restore the bump buttons
 			elif run_type_str == 'single_right':
-				self.process_one_angle(run_type_str, angle_deg_right_float, cycleCount)
+				self.process_one_angle(run_type_str, angle_deg_right_float)
 				self.show_bump_buttons()
 			elif run_type_str == 'range':
-				self.bump_up_button.config(state="disabled")    # disable the bump buttons
-				self.bump_down_button.config(state="disabled")
-				self.process_range(run_type_str, angle_deg_left_float, angle_deg_right_float, cycleCount)
+				self.setup_instance.bump_up_button.config(state="disabled")    # disable the bump buttons
+				self.setup_instance.bump_down_button.config(state="disabled")
+				self.process_range(run_type_str, angle_deg_left_float, angle_deg_right_float)
 				self.show_bump_buttons()
-			elif run_type_str == 'no_run':
-				cycleCount -= 1     # Since input was bad, pretend this cycle never happened
 
 	def run(self):
 
-		global cycleCount   # This program is event driven.  See event <<ButtonClickedGo>>)
-		cycleCount = 0
+		# This program is event driven.  See event <<ButtonClickedGo>>)
 		self.root.mainloop()		
 
 	
