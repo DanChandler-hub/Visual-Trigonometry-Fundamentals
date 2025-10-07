@@ -9,6 +9,7 @@ Python 3.13.7 was used for development.
 I can be reached at danch1@verizon.net      Dan Chandler
 """
 import tkinter as tk
+from tkinter import ttk
 from tkinter import Canvas
 import math
 import os  # we need os to get exit()
@@ -408,7 +409,7 @@ class setup_run:
 class TrigFundamentals:
 	def __init__(self):
 		self.root = tk.Tk()
-		self.root.title("Visual Trig Fundamentals")
+		self.root.title("Visual Trigonometry Fundamentals")
 		self.root.geometry(str(app_width) + "x" + str(app_height))
 		self.root.resizable(False, False)
 		self.input_box_left = None
@@ -446,7 +447,7 @@ class TrigFundamentals:
 		self.setup_instance = None
 
 		root_window = self.root.winfo_toplevel()
-		root_window.overrideredirect(1)  # get rid of the title bar of the main window
+		#root_window.overrideredirect(1)  # get rid of the title bar of the main window
 		
 			# Set the new window position
 		app_x_pos = int(this_screen_width / 2) - int(app_width / 2) 
@@ -827,7 +828,7 @@ class TrigFundamentals:
 		self.rootErrorWindow.resizable(False, False)
 
 		root_errwindow = self.rootErrorWindow.winfo_toplevel()
-		root_errwindow.overrideredirect(1)  # get rid of the title bar of the main window
+		#root_errwindow.overrideredirect(1)  # get rid of the title bar of the main window
 
 		# Set the err window position
 		err_x_pos = int(this_screen_width / 2) - int(err_window_width / 2) 
