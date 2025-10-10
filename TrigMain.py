@@ -19,6 +19,93 @@ import subprocess    # used for function get_screen_size
 import re            # used for function get_screen_size
 import ctypes        # used for function get_screen_size
 
+class Unit_Circle():
+
+	def __init__(self):
+		self.radius = None
+		self.center_x = None
+		self.center_y = None
+
+	def Unit_Circle_setup(self, TF_instance):
+
+		self.radius = scale_x(175)
+		self.center_x = scale_x(240)
+		self.center_y = scale_y(520)
+
+		if (TF_instance.firstCycle):
+
+			TF_instance.app_canvas.create_text(self.center_x, self.center_y - self.radius - scale_y(50), text="Unit Circle       Radius = 1",
+										font=("Helvetica", TF_instance.primary_font_size, "bold"))
+
+			circ = self.create_circle(self.center_x, self.center_y, self.radius, TF_instance.app_canvas, outline=TF_instance.rgb_to_hex((0, 255, 255)), fill='white', width = 2)
+			tooltip_str = "Trig Definitions:\n\n" + "sin(θ) = opposite / hypotenuse\n" + "cos(θ) = adjacent / hypotenuse\n" + "tan(θ) = opposite / adjacent\n\n" + "and tan(θ) also = sin(θ) / cos(θ)"
+			ToolTip_For_Canvas_Items(TF_instance.app_canvas, circ, tooltip_str) 
+
+			# Draw the x axis in light gray
+			x1 = self.center_x-self.radius
+			y1 = self.center_y
+			x2 = self.center_x+self.radius
+			y2 = self.center_y
+			TF_instance.app_canvas.create_line(x1, y1, x2, y2, fill =TF_instance.rgb_to_hex(TF_instance.medium_gray_color), width = 1)
+
+			# Draw the y axis in light gray
+			x1 = self.center_x
+			y1 = self.center_y-self.radius
+			x2 = self.center_x
+			y2 = self.center_y+self.radius
+			TF_instance.app_canvas.create_line(x1, y1, x2, y2, fill =TF_instance.rgb_to_hex(TF_instance.medium_gray_color), width = 1)
+
+			x = self.center_x
+			y = self.center_y - self.radius - scale_y(14)
+			TF_instance.app_canvas.create_text(x, y, text = "1", font=("Helvetica", TF_instance.small_font_size))
+
+			x = self.center_x
+			y = self.center_y + self.radius + scale_y(14)
+			TF_instance.app_canvas.create_text(x, y, text = "-1", font=("Helvetica", TF_instance.small_font_size))
+
+			x = self.center_x - self.radius - scale_x(14)
+			y = self.center_y
+			TF_instance.app_canvas.create_text(x, y, text = "-1", font=("Helvetica", TF_instance.small_font_size))
+
+			x = self.center_x + self.radius + scale_x(14)
+			y = self.center_y
+			TF_instance.app_canvas.create_text(x, y, text = "1", font=("Helvetica", TF_instance.small_font_size))
+
+	def Unit_Circle_draw_triangle(self, sinOfAngle, cosOfAngle, TF_instance): 
+
+		if (TF_instance.firstCycle):
+			self.Unit_Circle_setup(TF_instance)
+		else:
+			TF_instance.app_canvas.delete(self.lineH_id)  # remove the last hypotenuse line that we drew
+			TF_instance.app_canvas.delete(self.lineS_id)  # remove the last sin line that we drew
+			TF_instance.app_canvas.delete(self.lineC_id)  # remove the last cos line that we drew
+
+		line_width = 2
+
+		# Draw the hypotenuse in gray
+		x1 = self.center_x
+		y1 = self.center_y
+		x2 = self.center_x+(cosOfAngle*self.radius)
+		y2 = self.center_y-(sinOfAngle*self.radius)
+		self.lineH_id = TF_instance.app_canvas.create_line(x1, y1, x2, y2, fill = TF_instance.rgb_to_hex((154, 154, 154)), width = line_width)  # gray
+
+		# Draw the sin in red
+		x1 = self.center_x + (cosOfAngle*self.radius)
+		y1 = self.center_y
+		x2 = self.center_x+(cosOfAngle*self.radius)
+		y2 = self.center_y-(sinOfAngle*self.radius)
+		self.lineS_id = TF_instance.app_canvas.create_line(x1, y1, x2, y2, fill = TF_instance.rgb_to_hex((255, 0, 0)), width = line_width)  # red
+
+		# Draw the cos in dark blue
+		x1 = self.center_x
+		y1 = self.center_y
+		x2 = self.center_x+(cosOfAngle*self.radius)
+		y2 = self.center_y
+		self.lineC_id = TF_instance.app_canvas.create_line(x1, y1, x2, y2, fill = TF_instance.rgb_to_hex((0, 0, 255)), width = line_width)  # dark blue
+
+	def create_circle(self, center_x, center_y, radius, canvas, **kwargs):
+		return canvas.create_oval(center_x-radius, center_y-radius, center_x+radius, center_y+radius, **kwargs)
+
 class VirtualKeyboard():      # I got the code for this class from ChatGPT and then modified it for my purposes
 
         #    Virtual keyboard widget that can type into an existing Entry widget. (used for input)
@@ -143,11 +230,12 @@ class ToolTip:    # I got the code for this Tooltip class from ChatGPT (it works
             self.tooltip_window = None
 
 class ToolTip_For_Canvas_Items:    # I got the code for this second Tooltip class from ChatGPT (it works for canvas items)
-    def __init__(self, canvas, item, text):
+    def __init__(self, canvas, item, text): # I modified the code to add a yellow background for each tooltip
         self.canvas = canvas
         self.item = item
         self.text = text
         self.tooltip = None
+        self.rect_id = None
 
         # Bind mouse events to the line
         canvas.tag_bind(item, "<Enter>", self.show_tooltip)
@@ -159,12 +247,21 @@ class ToolTip_For_Canvas_Items:    # I got the code for this second Tooltip clas
             self.tooltip = self.canvas.create_text(
                 x, y, text=self.text, anchor="nw",
                 fill="black", font=("Helvetica", 10),
-                tags="tooltip"
-            )
+                tags="tooltip")
 
+			# Get the bounding box of the text
+            bbox = self.canvas.bbox(self.tooltip)  # returns (x1, y1, x2, y2)
+
+			# Create a yellow rectangle behind it (for background color)
+            self.rect_id = self.canvas.create_rectangle(bbox, fill="#ffffe0", outline="black")
+
+			# Move the text on top of the rectangle
+            self.canvas.tag_lower(self.rect_id, self.tooltip)
+            
     def hide_tooltip(self, event):
         if self.tooltip:
             self.canvas.delete(self.tooltip)
+            self.canvas.delete(self.rect_id)  # remove the rectangle
             self.tooltip = None
 
 global scale_factor_x
@@ -445,6 +542,7 @@ class TrigFundamentals:
 		self.lineC_id = None
 		self.firstCycle = True
 		self.setup_instance = None
+		self.UC_instance = None
 
 		root_window = self.root.winfo_toplevel()
 		#root_window.overrideredirect(1)  # get rid of the title bar of the main window
@@ -460,6 +558,7 @@ class TrigFundamentals:
 		self.app_canvas.pack()
      
 		self.setup_instance = setup_run()
+		self.UC_instance = Unit_Circle()
 		self.setup_instance.create_Widgets(self)
 
 	graphMinInDegrees = -360.0
@@ -722,81 +821,7 @@ class TrigFundamentals:
 		y2 = UpperLeft_y+height
 		line_id = self.app_canvas.create_line(x1, y1, x2, y2, fill = requestedColor, width = 1)
 		return line_id
-
-	def create_circle(self, center_x, center_y, radius, canvas, **kwargs):
-		return canvas.create_oval(center_x-radius, center_y-radius, center_x+radius, center_y+radius, **kwargs)
 		
-	def UnitCircle(self, sinOfAngle, cosOfAngle):
-
-		radius = scale_x(175)
-		center_x = scale_x(240)
-		center_y = scale_y(520)
-
-		if(self.firstCycle):
-
-			self.app_canvas.create_text(center_x, center_y - radius - scale_y(50), text="Unit Circle       Radius = 1",
-										font=("Helvetica", self.primary_font_size, "bold"))
-
-			self.create_circle(center_x, center_y, radius, self.app_canvas, outline=self.rgb_to_hex((0, 255, 255)), fill='white', width = 2)
-
-			# Draw the x axis in light gray
-			x1 = center_x-radius
-			y1 = center_y
-			x2 = center_x+radius
-			y2 = center_y
-			self.app_canvas.create_line(x1, y1, x2, y2, fill =self.rgb_to_hex(self.medium_gray_color), width = 1)
-
-			# Draw the y axis in light gray
-			x1 = center_x
-			y1 = center_y-radius
-			x2 = center_x
-			y2 = center_y+radius
-			self.app_canvas.create_line(x1, y1, x2, y2, fill =self.rgb_to_hex(self.medium_gray_color), width = 1)
-
-			x = center_x
-			y = center_y - radius - scale_y(14)
-			self.app_canvas.create_text(x, y, text = "1", font=("Helvetica", self.small_font_size))
-
-			x = center_x
-			y = center_y + radius + scale_y(14)
-			self.app_canvas.create_text(x, y, text = "-1", font=("Helvetica", self.small_font_size))
-
-			x = center_x - radius - scale_x(14)
-			y = center_y
-			self.app_canvas.create_text(x, y, text = "-1", font=("Helvetica", self.small_font_size))
-
-			x = center_x + radius + scale_x(14)
-			y = center_y
-			self.app_canvas.create_text(x, y, text = "1", font=("Helvetica", self.small_font_size))
-	
-		else:
-			self.app_canvas.delete(self.lineH_id)  # remove the last hypotenuse line that we drew
-			self.app_canvas.delete(self.lineS_id)  # remove the last sin line that we drew
-			self.app_canvas.delete(self.lineC_id)  # remove the last cos line that we drew
-
-		line_width = 2
-
-		# Draw the hypotenuse in gray
-		x1 = center_x
-		y1 = center_y
-		x2 = center_x+(cosOfAngle*radius)
-		y2 = center_y-(sinOfAngle*radius)
-		self.lineH_id = self.app_canvas.create_line(x1, y1, x2, y2, fill =self.rgb_to_hex((154, 154, 154)), width = line_width)  # gray
-
-		# Draw the sin in red
-		x1 = center_x + (cosOfAngle*radius)
-		y1 = center_y
-		x2 = center_x+(cosOfAngle*radius)
-		y2 = center_y-(sinOfAngle*radius)
-		self.lineS_id = self.app_canvas.create_line(x1, y1, x2, y2, fill =self.rgb_to_hex((255, 0, 0)), width = line_width)  # red
-
-		# Draw the cos in dark blue
-		x1 = center_x
-		y1 = center_y
-		x2 = center_x+(cosOfAngle*radius)
-		y2 = center_y
-		self.lineC_id = self.app_canvas.create_line(x1, y1, x2, y2, fill =self.rgb_to_hex((0, 0, 255)), width = line_width)  # dark blue
-
 	def WriteAngleValues(self, text_y, angle_deg, angle_rad):
 
 		angle_deg_str = 'angle in degrees = ' + str(angle_deg)
@@ -922,7 +947,7 @@ class TrigFundamentals:
 
 		self.TanBox(angle_deg, last_angle_deg, tanOfAngle)
 
-		self.UnitCircle(sinOfAngle, cosOfAngle)
+		self.UC_instance.Unit_Circle_draw_triangle(sinOfAngle, cosOfAngle, self)
 
 	def process_bump(self, direction):  #direction = up or down
 		if direction == 'up':
