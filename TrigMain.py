@@ -1,7 +1,7 @@
 """ 
 This is the Python code for the Visual Trigonometry Fundamentals program.  
 You can use trigmain.bat (on a Windows platform) to start the program or start it any other way that works for you.
-The program is free to use in any way you want with no restrictions. 
+The program is free. 
 If you make any useful changes, let me know so I can consider incorporating them into my version.
 If you discover any bugs, let me know.  I have only tested (so far) on a Windows machine.  I'll be interested in learning whether it works on Linux and Macs.
 Python 3.13.7 was used for development.
@@ -169,8 +169,8 @@ class setup_run:
 
 				self.bump_value_entry.config(fg="black")   # change the color of the bump entry text back to black (as Amy Winehouse would say)
 			except ValueError:
-				TF_instance.showErrorWindow(entered_text)
-
+				ErrorWindow_instance = ErrWindow.ErrorWindow(self.TF_instance)
+				ErrorWindow_instance.showErrorWindow(entered_text)
 
 		bump_entry_text = tk.StringVar()
 		initial_bump_value = str(TF_instance.bump_delta)
@@ -707,45 +707,6 @@ class TrigFundamentals:
 
 		self.text_angle_rad_id = self.app_canvas.create_text(self.scale_x(self.text_x), self.scale_y(text_y)+self.scale_y(48)+self.scale_y(self.line_height), text=angle_rad_str, 
 												  font=("Helvetica", local_font_size))	
-	def showErrorWindow(self, text):
-
-		err_window_width = self.scale_x(720)
-		err_window_height = self.scale_y(160)
-		self.rootErrorWindow = tk.Tk()
-		self.rootErrorWindow.title("Input error")
-		self.rootErrorWindow.geometry(str(err_window_width) + "x" + str(err_window_height))
-		self.rootErrorWindow.resizable(False, False)
-
-		root_errwindow = self.rootErrorWindow.winfo_toplevel()
-		#root_errwindow.overrideredirect(1)  # get rid of the title bar of the main window
-
-		# Set the err window position
-		err_x_pos = int(self.this_screen_width / 2) - int(err_window_width / 2) 
-		err_y_pos = int(self.this_screen_height / 2) - int(err_window_height / 2)
-		self.rootErrorWindow.geometry(f"+{err_x_pos}+{err_y_pos}")  # position the app window centered on the screen
-
-		  # Create canvas
-		red = self.rgb_to_hex((255, 0, 0))
-		err_canvas = Canvas(self.rootErrorWindow, width=err_window_width, height=err_window_height, bg=red)
-		err_canvas.pack()
-
-		def close_window():
-			self.rootErrorWindow.destroy()   # closes the red error window
-
-		err_msg = ""
-		if len(text) > 0:
-			err_msg = "[" + text + "] is not a valid number."
-		else:
-			err_msg = "You must type in an angle value in degrees before proceeding"
-
-		err_canvas.create_text(int(err_window_width / 2), self.scale_y(25), text=err_msg, font=("Helvetica", self.scale_x(16)))
-
-		err_msg_2 = "Touch (or click) the close button in this red window and then try again."
-
-		err_canvas.create_text(int(err_window_width / 2), self.scale_y(60), text=err_msg_2, font=("Helvetica", self.scale_x(16)))
-
-		close_button = tk.Button(self.rootErrorWindow, text = 'Close', command = close_window, font = ('Helvetica', self.button_font_size))
-		close_button.place(x=int(err_window_width / 2) - self.scale_x(25), y=int(err_window_height * 5 / 8))
 
 	def process_range(self, run_type_str, angle_deg_left_float, angle_deg_right_float):
 		angle = angle_deg_left_float
@@ -846,14 +807,16 @@ class TrigFundamentals:
 				angle_deg_right_float = float(text_right_str)
 			elif status_int == 4:   #both inputs are blank
 				run_type_str = 'no_run'
-				self.showErrorWindow(text_left_str)
+				ErrorWindow_instance = ErrWindow.ErrorWindow(self)
+				ErrorWindow_instance.showErrorWindow(text_left_str)
 			elif status_int == 5:   #left input is invalid
 				run_type_str = 'no_run'
-				ErrorWindow_instance = ErrWindow.ErrorWindow(self.this_screen_width, self.this_screen_height, self)
-				self.showErrorWindow(text_left_str)
+				ErrorWindow_instance = ErrWindow.ErrorWindow(self)
+				ErrorWindow_instance.showErrorWindow(text_left_str)
 			elif status_int == 6:   #right input is invalid
 				run_type_str = 'no_run'
-				self.showErrorWindow(text_right_str)
+				ErrorWindow_instance = ErrWindow.ErrorWindow(self)
+				ErrorWindow_instance.showErrorWindow(text_right_str)
 				
 			self.input_box_left.delete(0, tk.END) # clear text so that user can input another one if desired
 			text_left_str = ""               # clear text so that user can input another one if desired
