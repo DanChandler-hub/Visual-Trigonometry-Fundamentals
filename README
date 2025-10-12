@@ -7,7 +7,6 @@ Students learning trig sometimes find it hard initially to see how a circle with
 The VTF program allows the student to enter an angle value (or a range of angles) and then view the angle in all four graphical forms (sine wave, cosine wave, tangent, and the unit circle) simultaneously. 
 
 The program is written in Python, using tkinter.  The version of Python used during development was 3.13.7
-All the source is in file TrigMain.py  (plus dependencies).
 
 Testing was done on a Windows machine, using a screen resolution of 1920 by 1080.  
 The program was tested using other screen resolutions as well (1280 by 800 and 1366 by 768) and should be usable on various handheld devices and laptops as well as desktop computers.  The program cannot be used on a cell phone.
