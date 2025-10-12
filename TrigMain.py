@@ -9,7 +9,7 @@ Python 3.13.7 was used for development.
 I can be reached at danch1@verizon.net      Dan Chandler
 """
 import tkinter as tk
-from tkinter import ttk
+#from tkinter import ttk
 from tkinter import Canvas
 import math
 import os  # we need os to get exit()
@@ -382,7 +382,7 @@ class TrigFundamentals:
 			
 	def screen_calculations(self):
 
-		build_resolution = "low_end_handheld"			 # auto_detect or low_end_handheld or low_end_laptop
+		build_resolution = "auto_detect"			 # auto_detect or low_end_handheld or low_end_laptop
 
 		if build_resolution == "auto_detect":
 			self.this_screen_width, self.this_screen_height = self.get_screen_size()
