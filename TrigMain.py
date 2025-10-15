@@ -533,7 +533,7 @@ class TrigFundamentals:
 		else: 
 			if last_angle_deg >= self.graphMinInDegrees and last_angle_deg <= self.graphMaxInDegrees:
 				self.app_canvas.delete(self.sin_line_id)  # remove the last red sin line that we drew
-			self.app_canvas.delete(self.text_sin_id)  # remove the text from the previous cycle
+			self.app_canvas.delete(self.text_sin_id)  # remove the text that was written during the previous cycle
 
 		if angle_deg >= self.graphMinInDegrees and angle_deg <= self.graphMaxInDegrees:
 			# draw a vertical red line to show the sin of the angle that the user selected
@@ -595,7 +595,7 @@ class TrigFundamentals:
 		else:
 			if last_angle_deg >= self.graphMinInDegrees and last_angle_deg <= self.graphMaxInDegrees:
 				self.app_canvas.delete(self.cos_line_id)  # remove the last blue cos line that we drew
-			self.app_canvas.delete(self.text_cos_id)  # remove the text from the previous cycle
+			self.app_canvas.delete(self.text_cos_id)  # remove the text that was written during the previous cycle
 
 		if angle_deg >= self.graphMinInDegrees and angle_deg <= self.graphMaxInDegrees:
 			# draw a vertical dark blue line to show the cos of the angle that the user selected
@@ -653,7 +653,7 @@ class TrigFundamentals:
 		else: 
 			if last_angle_deg >= self.graphMinInDegrees and last_angle_deg <= self.graphMaxInDegrees:
 				self.app_canvas.delete(self.tan_line_id)  # remove the last black vertical line that we drew
-			self.app_canvas.delete(self.text_tan_id)  # remove the text from the previous cycle
+			self.app_canvas.delete(self.text_tan_id)  # remove the text that was written during the previous cycle
 			
 		if angle_deg >= self.graphMinInDegrees and angle_deg <= self.graphMaxInDegrees:
 			# draw a vertical black line to show the tan of the angle that the user selected
@@ -677,7 +677,7 @@ class TrigFundamentals:
 				self.scale_y(self.UpperLeft_y_tan)-self.scale_y(20), 	text=tan_str, font=("Helvetica", self.primary_font_size, "bold"))
 				
 	def verticalLine(self, angle_deg_requested, UpperLeft_x, UpperLeft_y, width, height, requestedColor):
-		# draw a vertical line to show the function at the requested angle
+		# draw a vertical line to show the function value at the requested angle
 
 		x_position = UpperLeft_x+(width / self.graphSpan)*(angle_deg_requested-self.graphMinInDegrees)
 		x1 = x_position
@@ -689,18 +689,20 @@ class TrigFundamentals:
 		
 	def WriteAngleValues(self, text_y, angle_deg, angle_rad):
 
+		angle_rad_round = round(angle_rad, 10)
+
 		angle_deg_str = 'angle in degrees = ' + str(angle_deg)
-		angle_rad_str = 'angle in radians = ' + str(angle_rad)
+		angle_rad_str = 'angle in radians = ' + str(angle_rad_round)
 
 		if(not self.firstCycle): 
-			self.app_canvas.delete(self.text_angle_deg_id)  # Erase the text from the previous cycle
-			self.app_canvas.delete(self.text_angle_rad_id)  # Erase the text from the previous cycle
+			self.app_canvas.delete(self.text_angle_deg_id)  # Erase the text that was written during the previous cycle
+			self.app_canvas.delete(self.text_angle_rad_id)  # Erase the text that was written during the previous cycle
 
 		local_font_size = None
 		if self.this_screen_width > self.width_threshold:
 			local_font_size = self.primary_font_size
 		else:
-			local_font_size = self.small_font_size #   # for tiny keyboards, we have to hardcode a small amount
+			local_font_size = self.small_font_size #   # for tiny keyboards, we have to use a small font
 
 		self.text_angle_deg_id = self.app_canvas.create_text(self.scale_x(self.text_x), self.scale_y(text_y)+self.scale_y(43), text=angle_deg_str, 
 												  font=("Helvetica", self.primary_font_size, "bold"))
@@ -760,9 +762,9 @@ class TrigFundamentals:
 								
 	def draw_one_angle(self, angle_deg, angle_rad, last_angle_deg):
 
-		sinOfAngle = math.sin(angle_rad)
-		cosOfAngle = math.cos(angle_rad)
-		tanOfAngle = math.tan(angle_rad)
+		sinOfAngle = round(math.sin(angle_rad), 10)  #  Too many digits can be distracting to the user, so round
+		cosOfAngle = round(math.cos(angle_rad), 10)
+		tanOfAngle = round(math.tan(angle_rad), 10)
 
 		self.WriteAngleValues(self.scale_y(self.angle_values_location_y), angle_deg, angle_rad)
 
@@ -913,14 +915,13 @@ class TrigFundamentals:
 
 	def run(self):
 
-		# This program is event driven.  See event <<ButtonClickedGo>>)
 		self.root.mainloop()		
 
 	
-# Create and run the program
+# Create and run the program.   This program is event driven.  See event <<ButtonClickedGo>>)
 if __name__ == "__main__":
     TF = TrigFundamentals()
-    TF.screen_calculations()
-    TF.setup_instance.create_Widgets(TF)
-	# The screen is now populated, waiting for the user to do something
+    TF.screen_calculations() # uses device resolution to scale the app window and widgets
+    TF.setup_instance.create_Widgets(TF) # place the widgets opn the screen
+	# The screen is now populated, the program is now waiting for the user to do something
     TF.run()
