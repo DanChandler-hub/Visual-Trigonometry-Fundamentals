@@ -343,6 +343,7 @@ class TrigFundamentals:
 		self.UpperLeft_x_sin = None
 		self.upperLeft_x_cos = None
 		self.UpperLeft_x_tan = None
+		self.Rounding_Num_Digits = 10  # this is the number of digits to which we round sin, cos, tan, and angle_rad values before displaying them
 		self.app_canvas = None
 
 	#==========
@@ -689,7 +690,7 @@ class TrigFundamentals:
 		
 	def WriteAngleValues(self, text_y, angle_deg, angle_rad):
 
-		angle_rad_round = round(angle_rad, 10)
+		angle_rad_round = round(angle_rad, self.Rounding_Num_Digits)
 
 		angle_deg_str = 'angle in degrees = ' + str(angle_deg)
 		angle_rad_str = 'angle in radians = ' + str(angle_rad_round)
@@ -756,15 +757,15 @@ class TrigFundamentals:
 
 		self.last_angle_deg = angle_deg
 
-		if self.firstCycle: 
+		if self.firstCycle:
 			self.x_annotation(self.graphMinInDegrees, x_right, self.graphMaxInDegrees, y_position_annotation)
 		self.firstCycle = False	
 								
 	def draw_one_angle(self, angle_deg, angle_rad, last_angle_deg):
 
-		sinOfAngle = round(math.sin(angle_rad), 10)  #  Too many digits can be distracting to the user, so round
-		cosOfAngle = round(math.cos(angle_rad), 10)
-		tanOfAngle = round(math.tan(angle_rad), 10)
+		sinOfAngle = round(math.sin(angle_rad), self.Rounding_Num_Digits)  #  Too many digits can be distracting to the user, so round
+		cosOfAngle = round(math.cos(angle_rad), self.Rounding_Num_Digits)
+		tanOfAngle = round(math.tan(angle_rad), self.Rounding_Num_Digits)
 
 		self.WriteAngleValues(self.scale_y(self.angle_values_location_y), angle_deg, angle_rad)
 
